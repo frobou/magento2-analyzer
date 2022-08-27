@@ -5,6 +5,7 @@ const fakeConfig = {
     "email": "code@frobou.com.br"
   },
   "dark_mode": false,
+  "theme": 'github',
   "paths": {
     "vscode_base_path": "/home/frobou/projects/test-store",
     "phpstorm_base_path": ""
