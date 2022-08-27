@@ -1,0 +1,20 @@
+<mat-toolbar color="primary">
+  <a mat-button
+     [routerLinkActive]="'active'"
+     [routerLink]="'file-headers'"> File Headers
+  </a>
+  <a mat-button
+     [routerLinkActive]="'active'"
+     [routerLink]="'creators'"> Creators
+  </a>
+  <a mat-button
+     [routerLinkActive]="'active'"
+     [routerLink]="'snippets'"> Snippets
+  </a>
+</mat-toolbar>
+
+<div *ngIf="useContent">
+  <p>Um dia terá uma descrição</p>
+</div>
+
+<router-outlet (activate)="showContent(false)" (deactivate)="showContent(true)"></router-outlet>

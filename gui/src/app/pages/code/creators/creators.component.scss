@@ -1,0 +1,33 @@
+.creators-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: flex-start;
+  align-content: flex-start;
+}
+
+.creators-actions {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  width: 200px;
+  margin: 15px 15px;
+  & a {
+    width: 100%;
+    &:hover {
+      background-color: #6ba49e;
+      color: #fff;
+    }
+  }
+}
+
+.creators-code {
+  flex-direction: row;
+  margin: 15px;
+}
+
+.active {
+  background-color: #3f7973;
+  color: #fff;
+}

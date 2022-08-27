@@ -1,0 +1,65 @@
+<div class="app-container">
+  <mat-toolbar>
+    <span class="mr-8">
+      <a [routerLink]="'/'" [routerLinkActive]="'active-root'" class="td-n" [ngClass]="{'title-dark': isDark, 'title': !isDark}">
+        <strong>
+          <mat-icon class="mt-am">code</mat-icon> Magento Analyzer Gui <mat-icon class="mt-am">code</mat-icon>
+        </strong>
+      </a>
+    </span>
+
+    <button mat-button class="example-icon" aria-label="Example icon-button with share icon"
+            [routerLinkActive]="'active'"
+            [routerLink]="'plugins'"> Plugins
+    </button>
+
+    <button mat-button class="example-icon" aria-label="Example icon-button with share icon"
+            [routerLinkActive]="'active'"
+            [routerLink]="'observers'"> Observers
+    </button>
+
+    <button mat-button class="example-icon" aria-label="Example icon-button with share icon"
+            [routerLinkActive]="'active'"
+            [routerLink]="'rewrites'"> Rewrites
+    </button>
+
+    <mat-divider [inset]="true" [vertical]="true" class="toolbar-divider"></mat-divider>
+
+    <button mat-button class="example-icon" aria-label="Example icon-button with share icon"
+            [routerLinkActive]="'active'"
+            [routerLink]="'code'"> Code Tools
+    </button>
+
+    <span class="spacer"></span>
+
+    <mat-icon class="mr-8">brightness_5</mat-icon>
+    <mat-slide-toggle [formControl]="toggleControl" class="mr-8">
+
+    </mat-slide-toggle>
+    <mat-icon>bedtime</mat-icon>
+
+    <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Example icon-button with a menu">
+      <mat-icon>more_vert</mat-icon>
+    </button>
+    <mat-menu #menu="matMenu">
+      <button mat-menu-item disabled>
+        <mat-icon>format_color_fill</mat-icon>
+        <span>Code Theme</span>
+      </button>
+      <button mat-menu-item *ngFor="let selTheme of themes" (click)="changeTheme(selTheme.value)">
+        <mat-icon *ngIf="theme === selTheme.value" color="primary">toggle_on</mat-icon>
+        <mat-icon *ngIf="theme !== selTheme.value">toggle_off</mat-icon>
+        <span>{{selTheme.label}}</span>
+      </button>
+    </mat-menu>
+
+  </mat-toolbar>
+
+  <div class="app-router">
+    <router-outlet></router-outlet>
+  </div>
+
+  <div class="footer">
+    <app-footer></app-footer>
+  </div>
+</div>

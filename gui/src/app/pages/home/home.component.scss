@@ -1,0 +1,17 @@
+.home-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.mc-h {
+  flex: 1;
+}
+
+p {
+  font-size: 16px;
+}
+
+.ct-max {
+  flex: 1;
+  max-width: 725px;
+}

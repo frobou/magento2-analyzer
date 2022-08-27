@@ -1,0 +1,50 @@
+.m-bt-n8 {
+  max-width: 200px;
+}
+
+.m-bt-n5 {
+  margin: -5px 0;
+}
+
+.b-totals{
+  color:#3ba55d;
+}
+
+.bt-io{
+  width: 32px;
+  height: 32px;
+  margin-left: 10px;
+}
+
+.pt-10 {
+  padding-top: 10px;
+}
+
+.rewrite-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.rewrite-header {
+  display: flex;
+  justify-content: flex-start;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  flex: 0 0 100%;
+}
+
+.rewrite-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.rewrite-card {
+  max-width: 550px;
+  min-width: 275px;
+  margin: 20px;
+  flex: 1;
+}

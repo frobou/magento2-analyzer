@@ -1,0 +1,77 @@
+<mat-card>
+  <mat-card-subtitle>Resultados encontrados:</mat-card-subtitle>
+  <mat-card-title>
+    <p>Total de Módulos: <strong class="b-totals">{{observers.length}}</strong></p>
+    <p>Total de Observers: <strong class="b-totals">{{totals}}</strong></p>
+    <p>Total de Disparadores:
+      <button mat-button (click)="openDialog()"><span class="b-totals">{{dispatchs.length}}</span></button>
+    </p>
+
+  </mat-card-title>
+
+  <mat-card-actions class="action-buttons" align="end">
+    <button mat-button (click)="accordion.openAll()">Expandir Todos</button>
+    <button mat-button (click)="accordion.closeAll()">Fechar Todos</button>
+  </mat-card-actions>
+
+  <mat-accordion multi>
+    <div *ngFor="let observer of observersFilter">
+
+      <mat-expansion-panel>
+        <mat-expansion-panel-header class="headers-align">
+          <mat-panel-title class="flex-1">
+            <h3>{{observer.module}}</h3>
+          </mat-panel-title>
+          <mat-panel-description>
+            Temos aqui {{getModuleObserverCount(observer.data)}} observer(s)
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <div class="observers-container">
+          <mat-card class="observers-card" *ngFor="let observerData of observer.data">
+            <mat-card-subtitle>Ativo: {{getObserverIsActive(observerData.active)}}</mat-card-subtitle>
+            <mat-card-content>
+              <div class="lt-font">
+                <p>Disparador: {{observerData.dispatch}}</p>
+                <p>Nome: {{observerData.observerName}}</p>
+                <p>Classe: {{observerData.observerClass}}</p>
+                <p>From: {{observerData.from}}</p>
+              </div>
+            </mat-card-content>
+            <mat-card-actions *ngIf="observerData.file" align="end">
+              <button mat-button
+                      (click)="observerData.open = !observerData.open">{{!observerData.open ? 'ABRIR' : 'ESCONDER'}}</button>
+              <span *ngIf="observerData.open">
+                  <a [href]="sanitize('vscode://file', observerData.file, observerData.line, 'vscode')"
+                     target="_blank">
+                    <img src="assets/images/vscode.png" alt="vscode" class="bt-io">
+                  </a>
+                  <a [href]="sanitize('vscodium://file', observerData.file, observerData.line, 'vscodium')"
+                     target="_blank">
+                    <img src="assets/images/vscodium.png" alt="vscode" class="bt-io">
+                  </a>
+                  <a
+                    [href]="sanitize('http://localhost:63342/api/file', observerData.file, observerData.line, 'phpstorm')"
+                    target="_blank">
+                    <img src="assets/images/phpstorm.png" alt="vscode" class="bt-io">
+                  </a>
+                </span>
+            </mat-card-actions>
+          </mat-card>
+
+        </div>
+
+      </mat-expansion-panel>
+
+    </div>
+  </mat-accordion>
+
+  <mat-paginator #paginator [length]="pageLength"
+                 [pageSize]="pageSize"
+                 [pageSizeOptions]="pageSizeOptions"
+                 (page)="setPageSizeOptions($event)"
+                 [showFirstLastButtons]="true"
+                 aria-label="Select page">
+  </mat-paginator>
+
+</mat-card>

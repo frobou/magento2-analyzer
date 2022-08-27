@@ -1,0 +1,21 @@
+<h1 mat-dialog-title>Lista de Dispatchers</h1>
+<div mat-dialog-content>
+
+  <form [formGroup]="form">
+    <mat-form-field appearance="outline" class="mr-10">
+      <mat-label>Filtrar por Nome</mat-label>
+      <input matInput type="text" autocomplete="off" formControlName="dispatcher">
+    </mat-form-field>
+    <button mat-icon-button (click)="doClear()" type="button">
+      <mat-icon>backspace</mat-icon>
+    </button>
+  </form>
+
+  <ul>
+    <li *ngFor="let dispatcher of dispatchers">{{dispatcher.name}} - {{dispatcher.file}}</li>
+  </ul>
+
+  <mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>Fechar</button>
+  </mat-dialog-actions>
+</div>

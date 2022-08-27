@@ -1,0 +1,18 @@
+<div class="fh-container mat-elevation-z1">
+  <h2>Informações de Copyright<mat-icon class="mt-am">copyright</mat-icon></h2>
+</div>
+<div class="fh-content">
+  <mat-card *ngFor="let comment of comments" class="mat-card fh-card">
+    <mat-card-header>
+      <mat-card-title>{{comment.language}}</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+        <pre>
+          <code class="hljs hljs-line-numbers" [highlight]="comment.comment" [lineNumbers]="false"></code>
+        </pre>
+    </mat-card-content>
+    <mat-card-actions align="end">
+      <button mat-button [cdkCopyToClipboard]="comment.comment">COPY TO CLIPBOARD</button>
+    </mat-card-actions>
+  </mat-card>
+</div>

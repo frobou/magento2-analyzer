@@ -1,0 +1,42 @@
+.m-bt-10 {
+  margin: 10px 0;
+}
+
+.b-totals{
+  color:#3ba55d;
+}
+
+.m-bt-n7{
+  margin: -7px 0;
+}
+
+.bt-io{
+  width: 30px;
+  height: 30px;
+  margin-right: 10px;
+}
+
+.observers-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.observers-card {
+  min-width: 275px;
+  max-width: 750px;
+  flex-direction: column;
+  margin: 20px;
+  flex: 1;
+}
+
+.action-buttons {
+  padding-bottom: 20px;
+}
+
+.headers-align {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}

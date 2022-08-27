@@ -1,0 +1,77 @@
+<mat-card>
+  <mat-card-title>Rewrites
+    <mat-icon class="mt-am">edit_note</mat-icon>
+  </mat-card-title>
+  <mat-card-content>
+    <p>São usados para informar qual classe concreta vai ser usada quando uma interface for adicionada no construtor</p>
+    <p>Também pode informar classes que subscrevem partes/todo de outra classe</p>
+    <p>Pode ser identificado no di.xml conforme o exemplo</p>
+    <pre>
+      <code class="hljs hljs-line-numbers" [highlight]="rewriteExample" [lineNumbers]="false"></code>
+    </pre>
+  </mat-card-content>
+</mat-card>
+
+<mat-card>
+  <mat-card-subtitle>Filtros de pesquisa:</mat-card-subtitle>
+  <mat-card-content>
+    <form [formGroup]="form">
+      <mat-form-field appearance="outline" class="mr-10" [ngClass]="{regex: filterModuleRegex}">
+        <mat-label>Filtrar por Módulo</mat-label>
+        <input matInput type="text" formControlName="module" autocomplete="off"
+               (keydown.enter)="searchForModuleRegex()">
+        <mat-icon matSuffix (click)="isFilterModuleRegex()" *ngIf="filterModuleRegex">build</mat-icon>
+        <mat-icon matSuffix (click)="isFilterModuleRegex()" *ngIf="!filterModuleRegex">short_text</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="mr-10">
+        <mat-label>Filtrar por forClass</mat-label>
+        <input matInput type="text" formControlName="forClass" autocomplete="off"
+               (keydown.enter)="searchForFieldsRegex()">
+        <mat-icon matSuffix (click)="isFilterDispatchRegex()" *ngIf="filterForClassRegex">build</mat-icon>
+        <mat-icon matSuffix (click)="isFilterDispatchRegex()" *ngIf="!filterForClassRegex">short_text</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="mr-10">
+        <mat-label>Filtrar por typeClass</mat-label>
+        <input matInput type="text" formControlName="typeClass" autocomplete="off"
+               (keydown.enter)="searchForFieldsRegex()">
+        <mat-icon matSuffix (click)="isFilterObserverNameRegex()" *ngIf="filterTypeClassRegex">build</mat-icon>
+        <mat-icon matSuffix (click)="isFilterObserverNameRegex()" *ngIf="!filterTypeClassRegex">short_text</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="mr-10">
+        <mat-label>Tipos</mat-label>
+        <mat-select formControlName="types" multiple>
+          <mat-select-trigger>
+            {{form.controls.types.value ? form.controls.types.value[0] : ''}}
+            <span *ngIf="form.controls.types.value?.length > 1" class="example-additional-selection">
+            (+{{form.controls.types.value.length - 1}} {{form.controls.types.value?.length === 2 ? 'outro' : 'outros'}}
+              )
+          </span>
+          </mat-select-trigger>
+          <mat-option *ngFor="let type of typeList" [value]="type">{{type}}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="mr-10">
+        <mat-label>Ativo</mat-label>
+        <mat-select formControlName="status" multiple>
+          <mat-select-trigger>
+            {{form.controls.status.value ? form.controls.status.value[0] : ''}}
+            <span *ngIf="form.controls.status.value?.length > 1" class="example-additional-selection">
+              (+{{form.controls.status.value.length - 1}} {{form.controls.status.value?.length === 2 ? 'outro' : 'outros'}})
+            </span>
+          </mat-select-trigger>
+          <mat-option *ngFor="let status of statuses" [value]="status">{{status}}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <button mat-icon-button (click)="doClear()" type="button">
+        <mat-icon>backspace</mat-icon>
+      </button>
+    </form>
+  </mat-card-content>
+</mat-card>
+
+<app-rewrite-list [rewrites]="rewrites" [totals]="totals"></app-rewrite-list>

@@ -1,0 +1,20 @@
+<div class="creators-container">
+  <div class="creators-actions">
+    <a mat-button class="example-icon" color="primary"
+       [routerLinkActive]="'active'"
+       [routerLink]="'module'"> Module
+    </a>
+    <a mat-button class="example-icon" color="primary"
+       [routerLinkActive]="'active'"
+       [routerLink]="'webapi'"> Webapi
+    </a>
+  </div>
+
+  <div class="creators-code">
+    <div *ngIf="useContent">
+      <p>Um dia terá uma descrição</p>
+    </div>
+    <router-outlet (activate)="showContent(false)" (deactivate)="showContent(true)"></router-outlet>
+  </div>
+</div>
+

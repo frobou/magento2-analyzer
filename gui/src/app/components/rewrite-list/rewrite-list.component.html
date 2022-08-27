@@ -1,0 +1,90 @@
+<mat-card>
+  <mat-card-subtitle>Resultados encontrados:</mat-card-subtitle>
+  <mat-card-title>
+    <p>Total de Módulos: <strong class="b-totals">{{rewrites.length}}</strong></p>
+    <p>Total de Rewrites: <strong class="b-totals">{{totals}}</strong></p>
+
+  </mat-card-title>
+
+  <mat-card-actions class="action-buttons" align="end">
+    <button mat-button (click)="accordion.openAll()">Expandir Todos</button>
+    <button mat-button (click)="accordion.closeAll()">Fechar Todos</button>
+  </mat-card-actions>
+
+  <mat-accordion multi>
+    <div *ngFor="let rewrite of rewritesFilter">
+
+      <mat-expansion-panel>
+        <mat-expansion-panel-header class="headers-align">
+          <mat-panel-title class="flex-1">
+            <h3>{{rewrite.module}}</h3>
+          </mat-panel-title>
+          <mat-panel-description>
+            Temos aqui {{getModuleRewriteCount(rewrite.data)}} rewrite(s)
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <div class="rewrite-container">
+          <mat-card class="rewrite-card" *ngFor="let rewriteData of rewrite.data">
+            <mat-card-subtitle>Ativo: {{getRewriteIsActive(rewriteData.active)}}</mat-card-subtitle>
+            <mat-card-content>
+              <div class="lt-font">
+                <p>Type: {{rewriteData.type}}</p>
+                <p>From: {{rewriteData.from}}</p>
+                <p>forClass: {{rewriteData.forClass}}</p>
+                <span *ngIf="rewriteData.open">
+                  <a [href]="sanitize('vscode://file', rewriteData.forFile, '1', 'vscode')"
+                     target="_blank">
+                    <img src="assets/images/vscode.png" alt="vscode" class="bt-io">
+                  </a>
+                  <a [href]="sanitize('vscodium://file', rewriteData.forFile, '1', 'vscodium')"
+                     target="_blank">
+                    <img src="assets/images/vscodium.png" alt="vscode" class="bt-io">
+                  </a>
+                  <a
+                    [href]="sanitize('http://localhost:63342/api/file', rewriteData.forFile, '1', 'phpstorm')"
+                    target="_blank">
+                    <img src="assets/images/phpstorm.png" alt="vscode" class="bt-io">
+                  </a>
+                </span>
+                <p>typeClass: {{rewriteData.typeClass}}</p>
+                <span *ngIf="rewriteData.open">
+                  <a [href]="sanitize('vscode://file', rewriteData.typeFile, '1', 'vscode')"
+                     target="_blank">
+                    <img src="assets/images/vscode.png" alt="vscode" class="bt-io">
+                  </a>
+                  <a [href]="sanitize('vscodium://file', rewriteData.typeFile, '1', 'vscodium')"
+                     target="_blank">
+                    <img src="assets/images/vscodium.png" alt="vscode" class="bt-io">
+                  </a>
+                  <a
+                    [href]="sanitize('http://localhost:63342/api/file', rewriteData.typeFile, '1', 'phpstorm')"
+                    target="_blank">
+                    <img src="assets/images/phpstorm.png" alt="vscode" class="bt-io">
+                  </a>
+                </span>
+              </div>
+            </mat-card-content>
+            <mat-card-actions align="end">
+              <button mat-button
+                      (click)="rewriteData.open = !rewriteData.open">{{!rewriteData.open ? 'ABRIR' : 'ESCONDER'}}</button>
+
+            </mat-card-actions>
+          </mat-card>
+
+        </div>
+
+      </mat-expansion-panel>
+
+    </div>
+  </mat-accordion>
+
+  <mat-paginator #paginator [length]="pageLength"
+                 [pageSize]="pageSize"
+                 [pageSizeOptions]="pageSizeOptions"
+                 (page)="setPageSizeOptions($event)"
+                 [showFirstLastButtons]="true"
+                 aria-label="Select page">
+  </mat-paginator>
+
+</mat-card>

@@ -1,0 +1,92 @@
+<mat-card>
+  <mat-card-title>Plugins <mat-icon class="mt-am">power</mat-icon></mat-card-title>
+  <mat-card-content>
+    <p>Um plug-in, ou interceptor, é uma classe que modifica
+      o comportamento de funções de classe pública interceptando uma chamada de função
+      e executando o código antes, depois ou em torno dessa chamada de função.
+    </p>
+    <p>
+      Isso permite substituir ou estender o comportamento de métodos públicos originais
+      para qualquer classe ou interface.
+    </p>
+    <p>Pode ser identificado no di.xml conforme o exemplo</p>
+    <pre>
+      <code class="hljs hljs-line-numbers" [highlight]="pluginExample" [lineNumbers]="false"></code>
+    </pre>
+  </mat-card-content>
+</mat-card>
+
+<mat-card>
+  <mat-card-subtitle>Filtros de pesquisa:</mat-card-subtitle>
+  <mat-card-content>
+    <form [formGroup]="form">
+      <div class="input-clear-form-field">
+        <mat-form-field appearance="outline" class="mr-10">
+          <mat-label>Filtrar por Módulo</mat-label>
+          <input matInput type="text" formControlName="module" autocomplete="off"
+                 (keydown.enter)="searchForModuleRegex()">
+          <mat-icon matSuffix (click)="isFilterModuleRegex()" *ngIf="filterModuleRegex">build</mat-icon>
+          <mat-icon matSuffix (click)="isFilterModuleRegex()" *ngIf="!filterModuleRegex">short_text</mat-icon>
+          <mat-error *ngIf="form.controls.module.errors">
+            Informe 3 ou mais caracteres
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="mr-10">
+          <mat-label>Filtrar por Método</mat-label>
+          <input matInput type="text" formControlName="originMethod" autocomplete="off"
+                 (keydown.enter)="searchForFieldsRegex()">
+          <mat-icon matSuffix (click)="isFilterOriginMethodRegex()" *ngIf="filterOriginMethodRegex">build</mat-icon>
+          <mat-icon matSuffix (click)="isFilterOriginMethodRegex()" *ngIf="!filterOriginMethodRegex">short_text</mat-icon>
+          <mat-error *ngIf="form.controls.originMethod.errors">
+            Informe 3 ou mais caracteres
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="mr-10">
+          <mat-label>Filtrar por Classe Base</mat-label>
+          <input matInput type="text" formControlName="pluginClass" autocomplete="off"
+                 (keydown.enter)="searchForFieldsRegex()">
+          <mat-icon matSuffix (click)="isFilterPluginClassRegex()" *ngIf="filterPluginClassRegex">build</mat-icon>
+          <mat-icon matSuffix (click)="isFilterPluginClassRegex()" *ngIf="!filterPluginClassRegex">short_text</mat-icon>
+          <mat-error *ngIf="form.controls.pluginClass.errors">
+            Informe 3 ou mais caracteres
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="mr-10">
+          <mat-label>Filtrar por Tipo</mat-label>
+          <mat-select formControlName="pluginType" multiple>
+            <mat-select-trigger>
+              {{form.controls.pluginType.value ? form.controls.pluginType.value[0] : ''}}
+              <span *ngIf="form.controls.pluginType.value?.length > 1" class="example-additional-selection">
+              (+{{form.controls.pluginType.value.length - 1}} {{form.controls.pluginType.value?.length === 2 ? 'other' : 'others'}})
+            </span>
+            </mat-select-trigger>
+            <mat-option *ngFor="let topping of acceptedTypes" [value]="topping">{{topping}}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="mr-10">
+          <mat-label>Ativo</mat-label>
+          <mat-select formControlName="status" multiple>
+            <mat-select-trigger>
+              {{form.controls.status.value ? form.controls.status.value[0] : ''}}
+              <span *ngIf="form.controls.status.value?.length > 1" class="example-additional-selection">
+            (+{{form.controls.status.value.length - 1}} {{form.controls.status.value?.length === 2 ? 'other' : 'others'}}
+                )
+          </span>
+            </mat-select-trigger>
+            <mat-option *ngFor="let status of statuses" [value]="status">{{status}}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <button mat-icon-button (click)="doClear()" type="button">
+          <mat-icon class="mt-16">backspace</mat-icon>
+        </button>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>
+
+<app-plugin-list [plugins]="plugins" [pluginTypes]="acceptedTypes" [totals]="totals"></app-plugin-list>

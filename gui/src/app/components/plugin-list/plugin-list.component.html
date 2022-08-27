@@ -1,0 +1,101 @@
+<mat-card>
+  <mat-card-subtitle>Resultados encontrados:</mat-card-subtitle>
+  <mat-card-title>Total de Módulos: <b class="b-totals">{{plugins.length}}</b></mat-card-title>
+  <mat-card-title>Total de Plugins: <b class="b-totals">{{totals}}</b></mat-card-title>
+
+  <mat-card-actions class="example-action-buttons" align="end">
+    <button mat-button (click)="accordion.openAll()">Expandir Todos</button>
+    <button mat-button (click)="accordion.closeAll()">Fechar Todos</button>
+  </mat-card-actions>
+
+  <mat-accordion multi>
+    <div *ngFor="let plugins of pluginsFilter">
+
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title class="flex-1">
+            <h3>{{plugins.module}}</h3>
+          </mat-panel-title>
+          <mat-panel-description>
+            Temos aqui {{getModulePluginCount(plugins.data)}} plugin(s)
+          </mat-panel-description>
+        </mat-expansion-panel-header>
+
+        <div *ngFor="let type of pluginTypes">
+          <div *ngIf="plugins.data[type]" class="plugins-container">
+            <div class="plugins-header">
+              <h3>Plugins do tipo <strong>{{type|titlecase}}</strong></h3>
+            </div>
+            <div *ngFor="let pluginData of plugins.data[type]" class="plugins-content">
+              <mat-card class="plugins-card mat-elevation-z2">
+                <mat-card-subtitle>Ativo: {{getIsActive(pluginData.active)}}</mat-card-subtitle>
+                <mat-card-content>
+                  <div class="lt-font">
+                    <p>Método: {{pluginData.name}}</p>
+                    <p>Classe: {{pluginData.className}}</p>
+                    <p>Linha: {{pluginData.line}}</p>
+                  </div>
+                  <span *ngIf="pluginData.open">
+                    <a [href]="sanitize('vscode://file', pluginData.file, pluginData.line, 'vscode')"
+                       target="_blank">
+                      <img src="assets/images/vscode.png" alt="vscode" class="bt-io">
+                    </a>
+                    <a [href]="sanitize('vscodium://file', pluginData.file, pluginData.line, 'vscodium')"
+                       target="_blank">
+                      <img src="assets/images/vscodium.png" alt="vscodium" class="bt-io">
+                    </a>
+                    <a
+                      [href]="sanitize('http://localhost:63342/api/file', pluginData.file, pluginData.line, 'phpstorm')"
+                      target="_blank">
+                      <img src="assets/images/phpstorm.png" alt="vscode" class="bt-io">
+                    </a>
+                  </span>
+                  <mat-divider class="m-bt-n8"></mat-divider>
+                  <div class="pt-10">Origem:
+                      <div class="lt-font">
+                        <p>Método: {{pluginData.origin.name}}</p>
+                        <p>Classe: {{pluginData.origin.className}}</p>
+                        <p>Linha: {{pluginData.origin.line}}</p>
+                      </div>
+                      <span *ngIf="pluginData.origin.file && pluginData.open">
+                        <a
+                          [href]="sanitize('vscode://file', pluginData.origin.file, pluginData.origin.line, 'vscode')"
+                          target="_blank">
+                          <img src="assets/images/vscode.png" alt="vscode" class="bt-io">
+                        </a>
+                        <a
+                          [href]="sanitize('vscodium://file', pluginData.origin.file, pluginData.origin.line, 'vscodium')"
+                          target="_blank">
+                          <img src="assets/images/vscodium.png" alt="vscode" class="bt-io">
+                        </a>
+                        <a
+                          [href]="sanitize('http://localhost:63342/api/file', pluginData.origin.file, pluginData.origin.line, 'phpstorm')"
+                          target="_blank">
+                          <img src="assets/images/phpstorm.png" alt="vscode" class="bt-io">
+                        </a>
+                      </span>
+                  </div>
+                </mat-card-content>
+                <mat-divider class="m-bt-n8"></mat-divider>
+                <mat-card-actions *ngIf="pluginData.file" align="end">
+                  <button mat-button
+                          (click)="pluginData.open = !pluginData.open">{{!pluginData.open ? 'ABRIR' : 'ESCONDER'}}</button>
+                </mat-card-actions>
+              </mat-card>
+            </div>
+          </div>
+        </div>
+      </mat-expansion-panel>
+
+    </div>
+  </mat-accordion>
+
+  <mat-paginator #paginator [length]="pageLength"
+                 [pageSize]="pageSize"
+                 [pageSizeOptions]="pageSizeOptions"
+                 (page)="setPageSizeOptions($event)"
+                 [showFirstLastButtons]="true"
+                 aria-label="Select page">
+  </mat-paginator>
+
+</mat-card>

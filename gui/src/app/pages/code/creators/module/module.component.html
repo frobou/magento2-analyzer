@@ -1,0 +1,86 @@
+<div>
+
+  <div>
+    <h2>O que é um módulo?</h2>
+    <p>É um lugar onde podemos adicionar funcionalidades ou alterar comportamentos existentes</p>
+    <p>Existem alguns tipos possíveis (tema, módulo, internacionalização), aqui vamos ver a estrutura básica de um
+      módulo</p>
+    <pre>Os tipos de módulos
+      <code class="hljs hljs-line-numbers" [highlight]="module.types" [lineNumbers]="false"></code>
+    </pre>
+  </div>
+
+  <div>
+    <h2>Criando um módulo</h2>
+
+    <p>A primeira etapa é definir o vendor e o nome</p>
+    <p>Vendor é o fornecedor, pode ser o nome da empresa, por exemplo</p>
+    <p>Já o nome deve ser algo que indique o motivo da sua criação, customer, por exemplo</p>
+    <p>Agora que definimos um nome, seguimos para a próxima fase</p>
+
+    <h2>Mão na massa</h2>
+    <p>Existe uma estrutura e alguns arquivos que são obrigatórios, além de poder ser criado de algumas foramas diferentes, vamos ver a mais simples aqui</p>
+    <img src="../../../../../assets/images/struct-module.png" alt="struct">
+    <p>app = pasta padrão do magento onde ficam diversos arquivos e pastas</p>
+    <p>code = pasta onde os módulos devem ser colocados (se naão existir, devemos criar)</p>
+    <p>Vendor = pasta do fornecedor do módulo, podemos ter vários módulos por fornecedor (Vendor é um exemplo)</p>
+    <p>Customer = pasta onde os arquivos do módulo ficam (Customer é um exemplo)</p>
+    <p><strong>Tanto a pasta do vendor quanto a pasta do módulo devem iniciar com letra MAIÚSCULA (podendo usar também o padrão CamelCase)</strong></p>
+    <p>etc = pasta onde os "arquivos de configuração" do módulo ficam</p>
+    <p>module.xml = arquivo de definição do módulo</p>
+    <pre>
+      <code class="hljs hljs-line-numbers" [highlight]="module.module_xml" [lineNumbers]="false"></code>
+    </pre>
+    <blockquote>
+      <strong>Note que o nome do módulo ficou como "Vendor_Customer", é assim que deve ser, o vendor e o nome, separado por um "_"</strong>
+    </blockquote>
+    <p>registration.php = arquivo que o magento usa para adicionar o módulo ao framework</p>
+    <pre>
+      <code class="hljs hljs-line-numbers" [highlight]="module.registration_php" [lineNumbers]="false"></code>
+    </pre>
+    <blockquote>
+      <strong>Assim como no module.xml, o vendor e o nome devem estar separado por um "_"</strong>
+    </blockquote>
+    <p>Existe ainda um arquivo opcional, o composer.json, que pode ser usado se queisermos criar um módulo para ser distribuído/reutilizado</p>
+    <pre>
+      <code class="hljs hljs-line-numbers" [highlight]="module.composer_json" [lineNumbers]="false"></code>
+    </pre>
+    <blockquote>
+      <strong>Note que, diferente do module.xml, a chave psr-4 fica como "Vendor\\Customer\\", isso é por causa do autoload do composer</strong>
+    </blockquote>
+    <div>
+      <h3>Hora de fazer</h3>
+      <p>Crie os arquivos de acordo com a imagem, eles devem estar em seus exatos lugares...</p>
+      <blockquote>
+        <span>*Valores em negrito são os nomes de sua escolha, e devem estar em <a href="https://pt.wikipedia.org/wiki/CamelCase" target="_blank">CamelCase</a></span>
+      </blockquote>
+      <ul>
+        <li><strong>vendor</strong> em app/code</li>
+        <li><strong>name</strong> em app/code/<strong>vendor</strong></li>
+        <li>registration.php em app/code/<strong>vendor/name</strong></li>
+        <li>composer.json em app/code/<strong>vendor/name</strong> (opcional)</li>
+        <li>etc em app/code/<strong>vendor/name</strong></li>
+        <li>module.xml em app/code/<strong>vendor/name/</strong>etc</li>
+      </ul>
+    </div>
+  </div>
+
+  <div>
+    <h2>Instalando o módulo</h2>
+    <p>Falta pouco, só mais uns comandos...</p>
+    <pre>
+      <code class="hljs hljs-line-numbers" [highlight]="module.module_list" [lineNumbers]="false"></code>
+    </pre>
+    <p>Seu módulo deve aparecer na lista, vamos instalar...</p>
+    <blockquote>Lembrando que Vendor é o seu vendor e Module é o nome do seu módulo</blockquote>
+    <pre>
+      <code class="hljs hljs-line-numbers" [languages]="['bash']" [highlight]="module.module_install" [lineNumbers]="false"></code>
+    </pre>
+  </div>
+
+  <div>
+    <h2>Acabou!</h2>
+    <p>Criar um módulo novo é só isso, claro que ele não faz nada, mas aí é outra coisa...</p>
+  </div>
+
+</div>

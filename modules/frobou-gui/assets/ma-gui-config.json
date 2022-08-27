@@ -1,0 +1,13 @@
+{
+  "persona": {
+    "vendor": "",
+    "author": "",
+    "email": ""
+  },
+  "dark_mode": false,
+  "theme": "github",
+  "paths": {
+    "vscode_base_path": "",
+    "phpstorm_base_path": ""
+  }
+}

@@ -1,0 +1,19 @@
+.fh-container {
+  display: flex;
+  justify-content: center;
+  padding-top: 15px;
+}
+
+.fh-content {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.fh-card {
+  max-width: 550px;
+  flex-direction: column;
+  margin: 20px;
+  flex: 1;
+}

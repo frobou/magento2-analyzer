@@ -1,0 +1,12 @@
+autoloaders:
+  Frobou: %module%/src
+
+commands:
+  customCommands:
+    - Frobou\Show\Plugin
+    - Frobou\Show\Observer
+    - Frobou\Show\Rewrite
+  aliases:
+    - "f:s:p": "frobou:show:plugin"
+    - "f:s:o": "frobou:show:observer"
+    - "f:s:r": "frobou:show:rewrite"
