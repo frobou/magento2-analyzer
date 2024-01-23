@@ -113,6 +113,7 @@ class Observer extends AbstractMagentoCommand
 
         unset($observerList['dispatchs'], $observerList['dispatchs_count']);
         $this->createOutput($observerList, $output);
+        return 1;
     }
 
     private function filterByMulti(array $data, array $observerList)

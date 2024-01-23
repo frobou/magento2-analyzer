@@ -112,6 +112,7 @@ class Plugin extends AbstractMagentoCommand
             }
         }
         $this->createOutput($pluginList, $output);
+        return 1;
     }
 
     private function filterByMulti(array $data, array $pluginList)

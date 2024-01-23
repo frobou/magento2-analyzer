@@ -112,6 +112,7 @@ class Rewrite extends AbstractMagentoCommand
             }
         }
         $this->createOutput($rewriteList, $output);
+        return 1;
     }
 
     private function filterByMulti(array $data, array $rewriteList)
