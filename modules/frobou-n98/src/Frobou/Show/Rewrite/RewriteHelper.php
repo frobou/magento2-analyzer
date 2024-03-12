@@ -66,7 +66,7 @@ class RewriteHelper extends BaseHelper
         $this->copyFolder(
             $src . '/../../../../../frobou-gui',
             $destination,
-            ['ma-observer.json', 'ma-plugins.json', 'ma-gui-config.json']
+            ['ma-observers.json', 'ma-plugins.json', 'ma-gui-config.json']
         );
     }
 
