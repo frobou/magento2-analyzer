@@ -67,3 +67,6 @@
 - Code Slicer <ivanaugustobd@pm.me>
 
 ### Um trabalho em andamento...
+
+### Dependências
+- Plugin PhpStorm [IDE Remote Control](https://plugins.jetbrains.com/plugin/19991-ide-remote-control/versions/stable)
