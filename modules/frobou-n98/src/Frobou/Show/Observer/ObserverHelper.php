@@ -1,31 +1,49 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Frobou\Show\Observer;
 
 use Frobou\Show\Helper\BaseHelper;
 use N98\Magento\Application;
+use Exception;
 
 class ObserverHelper extends BaseHelper
 {
-
     /**
-     * @param false $includeDisabled
-     * @param null $moduleName
-     * @param null $copyGui
-     * @return array|null
-     * @throws \Exception
+     * Obtém a lista de observers do Magento
+     *
+     * @param bool $includeDisabled Incluir observers de módulos desativados
+     * @return array{
+     *     dispatchs: array,
+     *     dispatchs_count: int,
+     *     ...mixed
+     * }
+     * @throws Exception
      */
-    public function getObservers($includeDisabled = false)
+    public function getObservers(bool $includeDisabled = false): array
     {
         $modulesList = $this->getModules($includeDisabled);
-        $observers = (new EventsHelper($this->_application))->getObservers($modulesList);
-        $dispatchs = (new ObserversDispatchs())->searchForDispatchs($this->_application->getMagentoRootFolder());
-        $observers['dispatchs'] = $dispatchs;
-        $observers['dispatchs_count'] = count($dispatchs);
-        return $observers;
+        $eventsHelper = new EventsHelper($this->_application);
+        $observersDispatchs = new ObserversDispatchs();
+        
+        $observers = $eventsHelper->getObservers($modulesList);
+        $dispatchs = $observersDispatchs->searchForDispatchs($this->_application->getMagentoRootFolder());
+        
+        return [
+            ...$observers,
+            'dispatchs' => $dispatchs,
+            'dispatchs_count' => count($dispatchs)
+        ];
     }
 
-    public function doCopy($destination)
+    /**
+     * Copia os arquivos necessários para o destino especificado
+     *
+     * @param string $destination Caminho de destino
+     * @throws Exception
+     */
+    public function doCopy(string $destination): void
     {
         $src = dirname(__FILE__);
         $this->copyFolder(
@@ -34,5 +52,4 @@ class ObserverHelper extends BaseHelper
             ['ma-plugins.json', 'ma-rewrites.json', 'ma-gui-config.json']
         );
     }
-
 }

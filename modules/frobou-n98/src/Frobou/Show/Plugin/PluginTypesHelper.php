@@ -2,10 +2,21 @@
 
 namespace Frobou\Show\Plugin;
 
+use ReflectionClass;
+use ReflectionMethod;
+use Exception;
+
 class PluginTypesHelper
 {
+    private const PLUGIN_METHOD_PREFIXES = ['after', 'before', 'around'];
 
-    public function getTypes($plugins)
+    /**
+     * Processa e retorna os tipos de plugins
+     *
+     * @param array $plugins Lista de plugins para processar
+     * @return array Array contendo plugins processados e totais
+     */
+    public function getTypes(array $plugins): array
     {
         $result = [];
         foreach ($plugins['pluginList'] as $key => $value) {
@@ -13,7 +24,7 @@ class PluginTypesHelper
                 if (!isset($result[$key])) {
                     $result[$key] = [];
                 }
-                array_push($result[$key], $this->getPluginClassMethods($plugin));
+                $result[$key][] = $this->getPluginClassMethods($plugin);
             }
         }
         return [
@@ -22,69 +33,129 @@ class PluginTypesHelper
         ];
     }
 
-    private function getPluginClassMethods($plugin)
+    /**
+     * Obtém os métodos de uma classe de plugin
+     *
+     * @param array $plugin Dados do plugin
+     * @return array Métodos do plugin organizados por tipo
+     */
+    private function getPluginClassMethods(array $plugin): array
     {
-        /* TODO
-          Class Magento\AdvancedCheckout\Model\AreProductsSalableForRequestedQty does not exist
-        em vendor/magento/module-inventory-advanced-checkout/etc/di.xml
-        */
         $types = [];
-        $prefix = implode('|', [' after', ' before', ' around']);
+        
         if ($plugin['disabled']) {
-            if (!isset($types['disabled'])) {
-                $types['disabled'] = [];
-            }
-            array_push($types['disabled'], $plugin);
-        } else {
-            $ref_class = new \ReflectionClass($plugin['pluginClass']);
-            $methods = $ref_class->getMethods();
+            $types['disabled'] = [$plugin];
+            return $types;
+        }
+
+        try {
+            $refClass = new ReflectionClass($plugin['pluginClass']);
+            $methods = $refClass->getMethods();
+            
             foreach ($methods as $method) {
-                preg_match('/' . $prefix . '/', ' ' . $method->getName(), $matches);
-                if (isset($matches[0])) {
-                    $key = trim($matches[0]);
-                    if (!isset($types[$key])) {
-                        $types[$key] = [];
-                    }
-                    array_push($types[$key], [
-                        'active' => $plugin['active'],
-                        'name' => $method->getName(),
-                        'className' => $plugin['pluginClass'],
-                        'line' => $method->getStartLine(),
-                        'file' => $plugin['pluginFile'],
-                        'origin' => $this->getReferenceClassMethods($plugin, $key, $method->getName())
-                    ]);
+                $methodName = $method->getName();
+                $prefix = $this->findPluginMethodPrefix($methodName);
+                
+                if ($prefix) {
+                    $types[$prefix][] = $this->createPluginMethodInfo($plugin, $method);
                 }
             }
+        } catch (Exception $e) {
+            $types['error'] = [
+                'message' => "Erro ao processar plugin {$plugin['pluginClass']}: " . $e->getMessage(),
+                'plugin' => $plugin
+            ];
         }
+
         return $types;
     }
 
-    private function getReferenceClassMethods($plugin, $type, $pluginMethod)
+    /**
+     * Encontra o prefixo do método do plugin
+     *
+     * @param string $methodName Nome do método
+     * @return string|null Prefixo encontrado ou null
+     */
+    private function findPluginMethodPrefix(string $methodName): ?string
     {
-        $methodToFind = lcfirst(str_replace($type, '', $pluginMethod));
+        foreach (self::PLUGIN_METHOD_PREFIXES as $prefix) {
+            if (stripos($methodName, $prefix) === 0) {
+                return $prefix;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Cria informações do método do plugin
+     *
+     * @param array $plugin Dados do plugin
+     * @param ReflectionMethod $method Método refletido
+     * @return array Informações do método
+     */
+    private function createPluginMethodInfo(array $plugin, ReflectionMethod $method): array
+    {
+        return [
+            'active' => $plugin['active'],
+            'name' => $method->getName(),
+            'className' => $plugin['pluginClass'],
+            'line' => $method->getStartLine(),
+            'file' => $plugin['pluginFile'],
+            'origin' => $this->getReferenceClassMethods($plugin, $method->getName())
+        ];
+    }
+
+    /**
+     * Obtém os métodos da classe de referência
+     *
+     * @param array $plugin Dados do plugin
+     * @param string $pluginMethod Nome do método do plugin
+     * @return array Informações do método de referência
+     */
+    private function getReferenceClassMethods(array $plugin, string $pluginMethod): array
+    {
+        $methodToFind = $this->extractOriginalMethodName($pluginMethod);
+        
         try {
-            $ref_class = new \ReflectionClass($plugin['className']);
-        } catch (\Exception $e) {
+            $refClass = new ReflectionClass($plugin['className']);
+            $methods = $refClass->getMethods();
+            
+            foreach ($methods as $method) {
+                if (strtolower($method->getName()) === strtolower($methodToFind)) {
+                    return [
+                        'name' => $method->getName(),
+                        'className' => $plugin['className'],
+                        'line' => $method->getStartLine(),
+                        'file' => $plugin['classFile']
+                    ];
+                }
+            }
+        } catch (Exception $e) {
             return [
                 'name' => $pluginMethod,
                 'className' => $plugin['className'],
                 'line' => 0,
                 'file' => $plugin['classFile'],
-                'error' => 'Base class not found'
+                'error' => 'Classe base não encontrada: ' . $e->getMessage()
             ];
         }
-        $methods = $ref_class->getMethods();
-        foreach ($methods as $method) {
-            if (strtolower($method->getName()) === strtolower($methodToFind)) {
-                return [
-                    'name' => $method->getName(),
-                    'className' => $plugin['className'],
-                    'line' => $method->getStartLine(),
-                    'file' => $plugin['classFile']
-                ];
-            }
-        }
+
         return [];
     }
 
+    /**
+     * Extrai o nome original do método do nome do método do plugin
+     *
+     * @param string $pluginMethod Nome do método do plugin
+     * @return string Nome original do método
+     */
+    private function extractOriginalMethodName(string $pluginMethod): string
+    {
+        foreach (self::PLUGIN_METHOD_PREFIXES as $prefix) {
+            if (stripos($pluginMethod, $prefix) === 0) {
+                return lcfirst(substr($pluginMethod, strlen($prefix)));
+            }
+        }
+        return $pluginMethod;
+    }
 }

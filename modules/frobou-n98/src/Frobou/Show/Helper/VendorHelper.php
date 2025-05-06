@@ -6,86 +6,102 @@ use N98\Magento\Application;
 
 class VendorHelper
 {
+    private const EXCLUDED_FOLDERS = ['.', '..', '.htaccess'];
+    private const MODULE_PATHS = ['app/code', 'vendor'];
+    private const MODULE_REGISTRATION_FILE = 'registration.php';
+    private const MODULE_CONFIG_FILE = 'etc/module.xml';
 
     /**
      * @var Application
      */
-    private $_application;
+    private Application $application;
 
     /**
-     * @var string[]
+     * @var array<string>
      */
-    protected $modulePath = ['app/code', 'vendor'];
+    private array $moduleFolder = [];
 
     /**
-     * @var array
+     * @var array<string>
      */
-    protected $moduleFolder = [];
-
-    /**
-     * @var array
-     */
-    protected $otherFolder = [];
+    private array $otherFolder = [];
 
     /**
      * VendorHelper constructor.
      * @param Application $application
      */
-    public function __construct($application)
+    public function __construct(Application $application)
     {
-        $this->_application = $application;
+        $this->application = $application;
     }
 
     /**
-     * @param $folder
+     * Verifica se um diretório é um módulo Magento
+     * @param string $folder Caminho do diretório
+     * @return void
      */
-    private function isModuleFolder($folder)
+    private function isModuleFolder(string $folder): void
     {
-        $target = $folder . DIRECTORY_SEPARATOR . 'registration.php';
-        if (file_exists($target)) {
-            $fileContent = file_get_contents($target);
-            $isModule = preg_match('/::MODULE/', $fileContent);
-            if ($isModule && file_exists($folder . '/etc/module.xml')) {
-                array_push($this->moduleFolder, $folder);
-            } else {
-                array_push($this->otherFolder, $folder);
-            }
+        $registrationFile = $folder . DIRECTORY_SEPARATOR . self::MODULE_REGISTRATION_FILE;
+        
+        if (!file_exists($registrationFile)) {
+            $this->scanSubdirectories($folder);
+            return;
+        }
+
+        $fileContent = file_get_contents($registrationFile);
+        $isModule = strpos($fileContent, '::MODULE') !== false;
+        
+        if ($isModule && file_exists($folder . DIRECTORY_SEPARATOR . self::MODULE_CONFIG_FILE)) {
+            $this->moduleFolder[] = $folder;
         } else {
-            if (is_dir($folder)) {
-                $allFolders = scandir($folder);
-                $mainFolders = array_filter(array_map([$this, 'clearFolders'], $allFolders));
-                foreach ($mainFolders as $mainFolder) {
-                    if (is_dir($folder.DIRECTORY_SEPARATOR.$mainFolder)) {
-                        $this->isModuleFolder($folder.DIRECTORY_SEPARATOR.$mainFolder);
-                    }
-                }
+            $this->otherFolder[] = $folder;
+        }
+    }
+
+    /**
+     * Escaneia subdiretórios recursivamente
+     * @param string $folder Caminho do diretório
+     * @return void
+     */
+    private function scanSubdirectories(string $folder): void
+    {
+        if (!is_dir($folder)) {
+            return;
+        }
+
+        $folders = array_filter(
+            scandir($folder),
+            fn($item) => !in_array($item, self::EXCLUDED_FOLDERS)
+        );
+
+        foreach ($folders as $subFolder) {
+            $subFolderPath = $folder . DIRECTORY_SEPARATOR . $subFolder;
+            if (is_dir($subFolderPath)) {
+                $this->isModuleFolder($subFolderPath);
             }
         }
     }
 
     /**
-     * @return array
+     * Retorna todos os módulos encontrados
+     * @return array{modules: array<string>, other: array<string>}
      */
-    public function getModules()
+    public function getModules(): array
     {
-        foreach ($this->modulePath as $modulePath) {
-            $path = $this->_application->getMagentoRootFolder() . '/' . $modulePath;
-            if (is_dir($path)) {
-                $allFolders = scandir($path);
-                $mainFolders = array_filter(array_map([$this, 'clearFolders'], $allFolders));
-                foreach ($mainFolders as $mainFolder) {
-                    $subPath = $path . DIRECTORY_SEPARATOR . $mainFolder;
-                    if (is_dir($subPath)) {
-                        $allSubFolders = scandir($subPath);
-                        $subFolders = array_filter(array_map([$this, 'clearFolders'], $allSubFolders));
-                        foreach ($subFolders as $subFolder) {
-                            $folder = $subPath . DIRECTORY_SEPARATOR . $subFolder;
-                            $this->isModuleFolder($folder);
-                        }
-                    }
-                }
+        $this->moduleFolder = [];
+        $this->otherFolder = [];
+
+        foreach (self::MODULE_PATHS as $modulePath) {
+            $path = $this->application->getMagentoRootFolder() . DIRECTORY_SEPARATOR . $modulePath;
+            
+            if (!is_dir($path)) {
+                continue;
             }
+
+            $this->scanModulePath($path);
         }
+
         return [
             'modules' => $this->moduleFolder,
             'other' => $this->otherFolder,
@@ -93,12 +109,33 @@ class VendorHelper
     }
 
     /**
-     * @param $path
-     * @return mixed|null
+     * Escaneia um caminho de módulo específico
+     * @param string $path Caminho do módulo
+     * @return void
      */
-    private function clearFolders($path)
+    private function scanModulePath(string $path): void
     {
-        return !in_array($path, ['.', '..', '.htaccess']) ? $path : null;
-    }
+        $folders = array_filter(
+            scandir($path),
+            fn($item) => !in_array($item, self::EXCLUDED_FOLDERS)
+        );
 
+        foreach ($folders as $mainFolder) {
+            $subPath = $path . DIRECTORY_SEPARATOR . $mainFolder;
+            
+            if (!is_dir($subPath)) {
+                continue;
+            }
+
+            $subFolders = array_filter(
+                scandir($subPath),
+                fn($item) => !in_array($item, self::EXCLUDED_FOLDERS)
+            );
+
+            foreach ($subFolders as $subFolder) {
+                $folder = $subPath . DIRECTORY_SEPARATOR . $subFolder;
+                $this->isModuleFolder($folder);
+            }
+        }
+    }
 }
