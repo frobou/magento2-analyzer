@@ -1,91 +1,161 @@
 <?php
 
-
 namespace Frobou\Show\Observer;
 
+use N98\Magento\Application;
+use SimpleXMLElement;
+use ReflectionClass;
+use Exception;
 
 class EventsHelper
 {
-
     /**
      * @var Application
      */
-    private $_application;
+    private Application $application;
 
     /**
-     * @var string[]
+     * @var array<string>
      */
-    private $diPaths = ['etc', 'etc/adminhtml', 'etc/frontend'];
+    private array $diPaths = ['etc', 'etc/adminhtml', 'etc/frontend'];
 
     /**
-     * DiHelper constructor.
+     * EventsHelper constructor.
      * @param Application $application
      */
-    public function __construct($application)
+    public function __construct(Application $application)
     {
-        $this->_application = $application;
+        $this->application = $application;
     }
 
     /**
-     * @param $modulesList
-     * @return array
+     * Obtém os observadores de uma lista de módulos
+     * 
+     * @param array $modulesList Lista de módulos para analisar
+     * @return array{observers: array, totals: int} Array contendo os observadores e o total
      */
-    public function getObservers($modulesList)
+    public function getObservers(array $modulesList): array
     {
-        $ct = 0;
-        $observer = [];
+        $totalObservers = 0;
+        $observers = [];
+
         foreach ($modulesList as $module) {
-            foreach ($this->diPaths as $path) {
-                $file = $module['path'] . $path . DIRECTORY_SEPARATOR . 'events.xml';
-                if (file_exists($file)) {
-                    /**
-                     * @var SimpleXMLElement xml
-                     */
-                    $xml = simplexml_load_file($file);
-                    foreach ($xml->event as $value) {
-                        if ($value->observer) {
-                            if (!isset($observer[$module['module']])) {
-                                $observer[$module['module']] = [];
-                            }
-                            $instance = (string)$value->observer->attributes()['instance'];
-                            try {
-                                $reflectionClass = new \ReflectionClass($instance);
-                                $line = $reflectionClass->getMethod('execute')->getStartLine();
-                                $filename = $reflectionClass->getFileName();
-                                $filename = str_ireplace(
-                                    htmlentities($this->_application->getMagentoRootFolder()),
-                                    '',
-                                    $filename
-                                );
-                            } catch (\Exception $exception) {
-                                //TODO: se der exception é porque é um virtualtype
-                                $filename = false;
-                                $line = false;
-                            }
-                            if ($instance) {
-                                $ct++;
-                                array_push($observer[$module['module']],
-                                           [
-                                        'active' => $module['active'],
-                                        'dispatch' => (string)$value->attributes()['name'],
-                                        'observerName' => (string)$value->observer->attributes()['name'],
-                                        'observerClass' => $instance,
-                                        'line' => $line,
-//                                        'disabled' => (bool)$value->plugin->attributes()['disabled'],
-                                        'file' => $filename,
-                                        'from' => $path
-                                    ]
-                                );
-                            }
-                        }
-                    }
-                }
+            $moduleObservers = $this->processModuleObservers($module);
+            if (!empty($moduleObservers)) {
+                $observers[$module['module']] = $moduleObservers;
+                $totalObservers += count($moduleObservers);
             }
         }
+
         return [
-            'observers' => $observer,
-            'totals' => $ct
+            'observers' => $observers,
+            'totals' => $totalObservers
         ];
     }
 
+    /**
+     * Processa os observadores de um módulo específico
+     * 
+     * @param array $module Informações do módulo
+     * @return array
+     */
+    private function processModuleObservers(array $module): array
+    {
+        $moduleObservers = [];
+
+        foreach ($this->diPaths as $path) {
+            $file = $module['path'] . $path . DIRECTORY_SEPARATOR . 'events.xml';
+            if (!file_exists($file)) {
+                continue;
+            }
+
+            $xml = $this->loadXmlFile($file);
+            if (!$xml) {
+                continue;
+            }
+
+            foreach ($xml->event as $event) {
+                if (!$event->observer) {
+                    continue;
+                }
+
+                $observerData = $this->processObserver($event, $module, $path);
+                if ($observerData) {
+                    $moduleObservers[] = $observerData;
+                }
+            }
+        }
+
+        return $moduleObservers;
+    }
+
+    /**
+     * Carrega um arquivo XML
+     * 
+     * @param string $file Caminho do arquivo
+     * @return SimpleXMLElement|null
+     */
+    private function loadXmlFile(string $file): ?SimpleXMLElement
+    {
+        try {
+            return simplexml_load_file($file);
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Processa um observador individual
+     * 
+     * @param SimpleXMLElement $event Elemento XML do evento
+     * @param array $module Informações do módulo
+     * @param string $path Caminho do arquivo
+     * @return array|null
+     */
+    private function processObserver(SimpleXMLElement $event, array $module, string $path): ?array
+    {
+        $instance = (string)$event->observer->attributes()['instance'];
+        if (!$instance) {
+            return null;
+        }
+
+        try {
+            $reflectionClass = new ReflectionClass($instance);
+            $line = $reflectionClass->getMethod('execute')->getStartLine();
+            $filename = $this->normalizeFilePath($reflectionClass->getFileName());
+        } catch (Exception $e) {
+            // VirtualType ou classe não encontrada
+            $filename = false;
+            $line = false;
+        }
+
+        return [
+            'active' => $module['active'],
+            'dispatch' => (string)$event->attributes()['name'],
+            'observerName' => (string)$event->observer->attributes()['name'],
+            'observerClass' => $instance,
+            'line' => $line,
+            'file' => $filename,
+            'from' => $path
+        ];
+    }
+
+    /**
+     * Normaliza o caminho do arquivo removendo o diretório raiz do Magento
+     * 
+     * @param string|false $filePath Caminho do arquivo
+     * @return string|false
+     */
+    private function normalizeFilePath($filePath)
+    {
+        if (!$filePath) {
+            return false;
+        }
+
+        return str_ireplace(
+            htmlentities($this->application->getMagentoRootFolder()),
+            '',
+            $filePath
+        );
+    }
 }

@@ -12,10 +12,16 @@ use Magento\Developer\Model\Di\PluginListFactory;
 use Magento\Framework\Config\ScopeInterface;
 use ReflectionClass;
 use ReflectionException;
+use ReflectionMethod;
+use ReflectionProperty;
 
+/**
+ * Class PluginReader
+ * @package Frobou\Show
+ */
 class PluginReader
 {
-    const ALLOWED_AREA = [
+    private const ALLOWED_AREA = [
         'global',
         'frontend',
         'adminhtml',
@@ -26,7 +32,7 @@ class PluginReader
         'graphql'
     ];
 
-    const ALLOWED_FILTERS = [
+    private const ALLOWED_FILTERS = [
         'grep',
         'area'
     ];
@@ -34,17 +40,17 @@ class PluginReader
     /**
      * @var ScopeInterface
      */
-    private $scope;
+    private ScopeInterface $scope;
 
     /**
      * @var PluginListFactory
      */
-    private $pluginListFactory;
+    private PluginListFactory $pluginListFactory;
 
     /**
-     * @var array
+     * @var array<string, mixed>
      */
-    private $filters = [];
+    private array $filters = [];
 
     /**
      * @param ScopeInterface $scope
@@ -65,7 +71,7 @@ class PluginReader
      */
     public function addFilter(string $key, $value): void
     {
-        if (!in_array($key, self::ALLOWED_FILTERS)) {
+        if (!in_array($key, self::ALLOWED_FILTERS, true)) {
             return;
         }
 
@@ -78,20 +84,25 @@ class PluginReader
      */
     public function hasFilter(string $key): bool
     {
-        return array_key_exists($key, $this->filters);
+        return isset($this->filters[$key]);
     }
 
     /**
      * @param string $key
      * @return mixed
+     * @throws Exception
      */
     public function getFilter(string $key)
     {
+        if (!$this->hasFilter($key)) {
+            throw new Exception(sprintf('Filter "%s" not found', $key));
+        }
+
         return $this->filters[$key];
     }
 
     /**
-     * @return array
+     * @return array<string, array{subject: string, wrappers: array<string, array<string, array<string, array<string>>>>}>
      * @throws Exception
      */
     public function getSubjects(): array
@@ -109,7 +120,7 @@ class PluginReader
             $listedWrappers = [];
 
             $areas = $this->hasFilter('area')
-                ? $this->getFilter('area')
+                ? (array)$this->getFilter('area')
                 : self::ALLOWED_AREA;
 
             foreach ($areas as $area) {
@@ -131,13 +142,12 @@ class PluginReader
                     }
 
                     foreach ($positionWrappers as $pluginClass => $methods) {
-                        $listedWrappersKey = sha1(
-                            $position .
-                            $pluginClass .
-                            implode(',', $methods)
+                        $listedWrappersKey = hash(
+                            'sha256',
+                            $position . $pluginClass . implode(',', $methods)
                         );
 
-                        if (in_array($listedWrappersKey, $listedWrappers)) {
+                        if (in_array($listedWrappersKey, $listedWrappers, true)) {
                             continue;
                         }
 
@@ -154,7 +164,7 @@ class PluginReader
     }
 
     /**
-     * @return array
+     * @return array<string>
      * @throws Exception
      */
     private function getSubjectsClasses(): array
@@ -174,14 +184,13 @@ class PluginReader
         $property = $reflector->getProperty('_data');
         $property->setAccessible(true);
 
-        $subjects = $property->getValue($pluginListReflect);
-        $subjects = array_keys($subjects);
+        $subjects = array_keys($property->getValue($pluginListReflect));
         sort($subjects);
 
-        // Filter by grep
         if ($this->hasFilter('grep')) {
-            $subjects = array_filter($subjects, function ($subject) {
-                return strstr($subject, $this->getFilter('grep'));
+            $grepFilter = $this->getFilter('grep');
+            $subjects = array_filter($subjects, function ($subject) use ($grepFilter) {
+                return str_contains($subject, (string)$grepFilter);
             });
         }
 

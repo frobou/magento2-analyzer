@@ -1,9 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Frobou\Show\Plugin;
 
 use N98\Magento\Application;
 use SimpleXMLElement;
+use ReflectionClass;
+use Exception;
 
 class DiHelper
 {
@@ -11,93 +15,153 @@ class DiHelper
     /**
      * @var Application
      */
-    private $_application;
+    private Application $_application;
 
     /**
-     * @var string[]
+     * @var array<string>
      */
-    private $diPaths = ['etc', 'etc/adminhtml', 'etc/frontend'];
+    private array $diPaths = ['etc', 'etc/adminhtml', 'etc/frontend'];
 
     /**
      * DiHelper constructor.
      * @param Application $application
      */
-    public function __construct($application)
+    public function __construct(Application $application)
     {
         $this->_application = $application;
     }
 
+    /**
+     * Obtém os plugins de uma lista de módulos
+     * 
+     * @param array $modulesList Lista de módulos para analisar
+     * @return array{pluginList: array, totals: int} Array contendo os plugins e o total
+     */
+    public function getPlugins(array $modulesList): array
+    {
+        $totalPlugins = 0;
+        $plugins = [];
+
+        foreach ($modulesList as $module) {
+            $modulePlugins = $this->processModulePlugins($module);
+            if (!empty($modulePlugins)) {
+                $plugins[$module['module']] = $modulePlugins;
+                $totalPlugins += count($modulePlugins);
+            }
+        }
+
+        return [
+            'pluginList' => $plugins,
+            'totals' => $totalPlugins
+        ];
+    }
 
     /**
-     * @param $modulesList
+     * Processa os plugins de um módulo específico
+     * 
+     * @param array $module Informações do módulo
      * @return array
      */
-    public function getPlugins($modulesList)
+    private function processModulePlugins(array $module): array
     {
-        $ct = 0;
-        $plugins = [];
-        foreach ($modulesList as $module) {
-            foreach ($this->diPaths as $path) {
-                $file = $module['path'] . $path . DIRECTORY_SEPARATOR . 'di.xml';
-                if (file_exists($file)) {
-                    /**
-                     * @var SimpleXMLElement xml
-                     */
-                    $xml = simplexml_load_file($file);
-                    // TODO: validar se precisa de virtualtype
-/*                    $virtualTypes = [];
-                    foreach ($xml->xpath('virtualType') as $virtual) {
-                        if ($virtual->attributes()['type']) {
-                            var_dump($virtual->attributes()['type']);
-                        }
-                    }*/
-                    foreach ($xml->type as $value) {
-                        if ($value->plugin) {
-                            if (!isset($plugins[$module['module']])) {
-                                $plugins[$module['module']] = [];
-                            }
-                            /*
-                             * isso foi encontrado em vendor/magento/module-backend/etc/adminhtml/di.xml
-                                <type name="Magento\Framework\App\Action\Action">
-                                    <plugin name="storeCheck" disabled="true" />
-                                </type>
-                             */
-                            $type = (string)$value->plugin->attributes()['type'];
-                            try {
-                                $classInstance = new \ReflectionClass((string)$value->attributes()['name']);
-                                $pluginInstance = new \ReflectionClass($type);
-                                $classFile = $classInstance->getFileName();
-                                $classFile = str_ireplace(htmlentities($this->_application->getMagentoRootFolder()), '', $classFile);
-                                $pluginFile = $pluginInstance->getFileName();
-                                $pluginFile = str_ireplace(htmlentities($this->_application->getMagentoRootFolder()), '', $pluginFile);
-                            } catch (\Exception $exception) {
-                                $classFile = false;
-                                $pluginFile = false;
-                            }
-                            if ($type) {
-                                $ct++;
-                                array_push($plugins[$module['module']],
-                                    [
-                                        'active' => $module['active'],
-                                        'className' => (string)$value->attributes()['name'],
-                                        'pluginName' => (string)$value->plugin->attributes()['name'],
-                                        'pluginFile' => $pluginFile,
-                                        'pluginClass' => $type,
-                                        'classFile' => $classFile,
-                                        'disabled' => (string)$value->plugin->attributes()['disabled'] === 'true',
-                                        'from' => $path
-                                    ]
-                                );
-                            }
-                        }
-                    }
+        $modulePlugins = [];
+
+        foreach ($this->diPaths as $path) {
+            $file = $module['path'] . $path . DIRECTORY_SEPARATOR . 'di.xml';
+            if (!file_exists($file)) {
+                continue;
+            }
+
+            $xml = $this->loadXmlFile($file);
+            if (!$xml) {
+                continue;
+            }
+
+            foreach ($xml->type as $value) {
+                if (!$value->plugin) {
+                    continue;
+                }
+
+                $pluginData = $this->processPlugin($value, $module, $path);
+                if ($pluginData) {
+                    $modulePlugins[] = $pluginData;
                 }
             }
         }
+
+        return $modulePlugins;
+    }
+
+    /**
+     * Carrega um arquivo XML
+     * 
+     * @param string $file Caminho do arquivo
+     * @return SimpleXMLElement|null
+     */
+    private function loadXmlFile(string $file): ?SimpleXMLElement
+    {
+        try {
+            return simplexml_load_file($file);
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Processa um plugin individual
+     * 
+     * @param SimpleXMLElement $value Elemento XML do plugin
+     * @param array $module Informações do módulo
+     * @param string $path Caminho do arquivo
+     * @return array|null
+     */
+    private function processPlugin(SimpleXMLElement $value, array $module, string $path): ?array
+    {
+        $type = (string)$value->plugin->attributes()['type'];
+        if (!$type) {
+            return null;
+        }
+
+        try {
+            $classInstance = new ReflectionClass((string)$value->attributes()['name']);
+            $pluginInstance = new ReflectionClass($type);
+            
+            $classFile = $this->normalizeFilePath($classInstance->getFileName());
+            $pluginFile = $this->normalizeFilePath($pluginInstance->getFileName());
+        } catch (Exception $e) {
+            $classFile = false;
+            $pluginFile = false;
+        }
+
         return [
-            'pluginList' => $plugins,
-            'totals' => $ct
+            'active' => $module['active'],
+            'className' => (string)$value->attributes()['name'],
+            'pluginName' => (string)$value->plugin->attributes()['name'],
+            'pluginFile' => $pluginFile,
+            'pluginClass' => $type,
+            'classFile' => $classFile,
+            'disabled' => (string)$value->plugin->attributes()['disabled'] === 'true',
+            'from' => $path
         ];
+    }
+
+    /**
+     * Normaliza o caminho do arquivo removendo o diretório raiz do Magento
+     * 
+     * @param string|false $filePath Caminho do arquivo
+     * @return string|false
+     */
+    private function normalizeFilePath($filePath)
+    {
+        if (!$filePath) {
+            return false;
+        }
+
+        return str_ireplace(
+            htmlentities($this->_application->getMagentoRootFolder()),
+            '',
+            $filePath
+        );
     }
 
 }

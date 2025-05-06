@@ -1,108 +1,169 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Frobou\Show\Helper;
 
 use N98\Magento\Application;
+use Exception;
+use SimpleXMLElement;
 
 abstract class BaseHelper
 {
-
     /**
      * @var Application
      */
-    protected $_application;
+    protected Application $_application;
 
     /**
-     * @param Application $_application
-     * @return $this
+     * Define a aplicação Magento
+     *
+     * @param Application $application
+     * @return self
      */
-    public function setApplication(Application $application)
+    public function setApplication(Application $application): self
     {
         $this->_application = $application;
         return $this;
     }
 
     /**
-     * @return mixed
-     * @throws \Exception
+     * Obtém a configuração do Magento
+     *
+     * @return array
+     * @throws Exception
      */
-    protected function getConfig()
+    protected function getConfig(): array
     {
-        $config = include $this->_application->getMagentoRootFolder() . '/app/etc/config.php';
-        if (!$config) {
-            throw new \Exception('erro');
+        $configPath = $this->_application->getMagentoRootFolder() . '/app/etc/config.php';
+        
+        if (!file_exists($configPath)) {
+            throw new Exception('Arquivo de configuração não encontrado: ' . $configPath);
         }
+
+        $config = include $configPath;
+        
+        if (!is_array($config)) {
+            throw new Exception('Configuração inválida: arquivo não retornou um array');
+        }
+
         return $config;
     }
 
     /**
-     * @param $src
-     * @param $dst
+     * Copia uma pasta mantendo arquivos específicos
+     *
+     * @param string $src Caminho de origem
+     * @param string $dst Caminho de destino
+     * @param array $mantain Lista de arquivos para manter
+     * @return void
      */
-    protected function copyFolder($src, $dst, $mantain)
+    protected function copyFolder(string $src, string $dst, array $mantain): void
     {
+        if (!is_dir($src)) {
+            throw new Exception("Diretório de origem não existe: {$src}");
+        }
+
         $dir = opendir($src);
-        @mkdir($dst);
-        while (false !== ($file = readdir($dir))) {
-            if (($file != '.') && ($file != '..')) {
-                if (is_dir($src . '/' . $file)) {
-                    $this->copyFolder($src . '/' . $file, $dst . '/' . $file, $mantain);
-                } else {
-                    $configFile = 'ma-gui-config.json';
-                    if ($file === $configFile && !file_exists($dst . '/' . $file)) {
-                        unset($mantain[array_search('ma-gui-config.json', $mantain)]);
-                    }
-                    if (!in_array($file, $mantain)) {
-                        copy($src . '/' . $file, $dst . '/' . $file);
-                    }
+        if ($dir === false) {
+            throw new Exception("Não foi possível abrir o diretório: {$src}");
+        }
+
+        @mkdir($dst, 0755, true);
+
+        while (($file = readdir($dir)) !== false) {
+            if ($file === '.' || $file === '..') {
+                continue;
+            }
+
+            $srcPath = $src . '/' . $file;
+            $dstPath = $dst . '/' . $file;
+
+            if (is_dir($srcPath)) {
+                $this->copyFolder($srcPath, $dstPath, $mantain);
+                continue;
+            }
+
+            $configFile = 'ma-gui-config.json';
+            if ($file === $configFile && !file_exists($dstPath)) {
+                $key = array_search($configFile, $mantain);
+                if ($key !== false) {
+                    unset($mantain[$key]);
                 }
             }
+
+            if (!in_array($file, $mantain, true)) {
+                copy($srcPath, $dstPath);
+            }
         }
+
         closedir($dir);
     }
 
-    protected function getModules($includeDisabled = false)
+    /**
+     * Obtém a lista de módulos
+     *
+     * @param bool $includeDisabled Incluir módulos desativados
+     * @return array
+     */
+    protected function getModules(bool $includeDisabled = false): array
     {
         $modulesInConfig = (new ConfigDotPhpHelper($this->getConfig()))->getModules($includeDisabled);
         $moduleList = (new VendorHelper($this->_application))->getModules();
         $modules = [];
+
         foreach ($moduleList['modules'] as $value) {
             $modules = array_merge($modules, $this->readModuleXml($value));
         }
+
         $orderedModules = [];
         foreach ($modulesInConfig as $key => $value) {
-            $orderedModules[] = [
-                'module' => $key,
-                'path' => $modules[$key]['path'],
-                'active' => $modulesInConfig[$key]['active']
-            ];
+            if (isset($modules[$key])) {
+                $orderedModules[] = [
+                    'module' => $key,
+                    'path' => $modules[$key]['path'],
+                    'active' => $value['active']
+                ];
+            }
         }
+
         return $orderedModules;
     }
 
     /**
-     * @param $data
-     * @return array|null
+     * Lê o arquivo module.xml de um módulo
+     *
+     * @param string $data Caminho do módulo
+     * @return array
      */
-    private function readModuleXml($data)
+    private function readModuleXml(string $data): array
     {
         $result = [];
         $basePath = $data . DIRECTORY_SEPARATOR;
         $path = $basePath . 'etc/module.xml';
-        $name = null;
-        try {
-            $name = (string)simplexml_load_file($path)->module->attributes()['name'];
-        } catch (\Exception $e) {
+
+        if (!file_exists($path)) {
             return [];
         }
-        if (!$name) {
-            // TODO: retornar alguma coisa de util
-            return null;
+
+        try {
+            $xml = simplexml_load_file($path);
+            if ($xml === false) {
+                return [];
+            }
+
+            $name = (string)$xml->module->attributes()['name'];
+            if (empty($name)) {
+                return [];
+            }
+
+            $result[$name] = [
+                'path' => $basePath
+            ];
+        } catch (Exception $e) {
+            return [];
         }
-        $result[$name] = [
-            'path' => $basePath
-        ];
+
         return $result;
     }
-
 }

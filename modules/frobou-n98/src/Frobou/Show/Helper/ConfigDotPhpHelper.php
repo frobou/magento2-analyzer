@@ -2,52 +2,82 @@
 
 namespace Frobou\Show\Helper;
 
+/**
+ * Helper class for handling module configuration
+ */
 class ConfigDotPhpHelper
 {
+    /**
+     * @var array
+     */
+    private array $config;
 
-    private $config;
-
-    public function __construct($config)
+    /**
+     * @param array $config Configuration array
+     */
+    public function __construct(array $config)
     {
         $this->config = $config;
     }
 
-    public function getModules($includeDisabled = false)
+    /**
+     * Get list of modules with their status
+     * 
+     * @param bool $includeDisabled Whether to include disabled modules
+     * @return array<string, array{active: int}>
+     */
+    public function getModules(bool $includeDisabled = false): array
     {
-        $modules = $this->config['modules'];
+        if (!isset($this->config['modules']) || !is_array($this->config['modules'])) {
+            return [];
+        }
 
+        $modules = $this->config['modules'];
         $list = [];
+        
         foreach ($modules as $key => $value) {
             if ($includeDisabled || $value === 1) {
                 $list[$key] = [
                     'active' => $value
                 ];
-/*                $module = new \stdClass();
-                $module->name = $key;
-                $module->active = $value;
-                $list[] = $module;*/
             }
         }
+        
         return $list;
     }
 
-    public function getModule($name, $list) {
-        $module = array_filter($list, function ($value) use ($name) {
-            return $value->name === $name;
-        });
-        return count($module) === 1 ? array_values($module)[0] : false;
+    /**
+     * Get a specific module by name
+     * 
+     * @param string $name Module name
+     * @param array $list List of modules
+     * @return array{active: int}|false
+     */
+    public function getModule(string $name, array $list)
+    {
+        return $list[$name] ?? false;
     }
 
-    public function getDisabledModules()
+    /**
+     * Get list of disabled modules
+     * 
+     * @return array<string>
+     */
+    public function getDisabledModules(): array
     {
-        $modules = $this->getConfig()['modules'];
+        if (!isset($this->config['modules']) || !is_array($this->config['modules'])) {
+            return [];
+        }
+
+        $modules = $this->config['modules'];
         $list = [];
+        
         foreach ($modules as $key => $module) {
             if ($module === 0) {
                 $list[] = $key;
             }
         }
+        
         return $list;
     }
-
 }
